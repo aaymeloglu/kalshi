@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { EventsApi } from "kalshi-typescript";
 import { z } from "zod";
+import { cents, fp } from "../schema.js";
 
 /** Schema for get_event tool parameters */
 const GetEventSchema = z.object({
@@ -69,12 +70,12 @@ export function registerGetEvent(server: McpServer, eventsApi: EventsApi) {
             title: m.title,
             subtitle: m.subtitle,
             status: m.status,
-            yes_bid: m.yes_bid,
-            yes_ask: m.yes_ask,
-            last_price: m.last_price,
-            volume: m.volume,
-            volume_24h: m.volume_24h,
-            open_interest: m.open_interest,
+            yes_bid: cents(m.yes_bid_dollars),
+            yes_ask: cents(m.yes_ask_dollars),
+            last_price: cents(m.last_price_dollars),
+            volume: fp(m.volume_fp),
+            volume_24h: fp(m.volume_24h_fp),
+            open_interest: fp(m.open_interest_fp),
           })),
           markets_count: markets.length,
         };

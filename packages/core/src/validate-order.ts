@@ -55,15 +55,17 @@ export async function validateOrder(
       );
     }
 
-    // Get current market price
+    // Get current market price (cents). Quotes are dollar fixed-point strings.
+    const toCents = (d?: string | null) =>
+      d == null ? undefined : Math.round(parseFloat(d) * 100);
     const currentPrice =
       input.side === "yes"
         ? input.action === "buy"
-          ? market.yes_ask
-          : market.yes_bid
+          ? toCents(market.yes_ask_dollars)
+          : toCents(market.yes_bid_dollars)
         : input.action === "buy"
-          ? market.no_ask
-          : market.no_bid;
+          ? toCents(market.no_ask_dollars)
+          : toCents(market.no_bid_dollars);
 
     // Warn if user price is far from market
     if (input.price && currentPrice) {

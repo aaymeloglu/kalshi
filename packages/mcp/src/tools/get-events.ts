@@ -11,6 +11,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { EventsApi, GetEventsStatusEnum } from "kalshi-typescript";
 import { z } from "zod";
+import { cents } from "../schema.js";
 
 /** Schema for get_events tool parameters */
 const GetEventsSchema = z.object({
@@ -86,8 +87,8 @@ export function registerGetEvents(server: McpServer, eventsApi: EventsApi) {
                   ticker: m.ticker,
                   title: m.title,
                   status: m.status,
-                  yes_bid: m.yes_bid,
-                  yes_ask: m.yes_ask,
+                  yes_bid: cents(m.yes_bid_dollars),
+                  yes_ask: cents(m.yes_ask_dollars),
                 })),
               }
             : {}),

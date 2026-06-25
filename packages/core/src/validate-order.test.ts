@@ -116,7 +116,8 @@ describe("validateOrder", () => {
         market: {
           ticker: "TEST-MARKET",
           status: "open",
-          yes_ask: 50,
+          yes_ask_dollars: "0.50",
+          yes_bid_dollars: "0.48",
         },
       },
     });
@@ -297,7 +298,8 @@ describe("validateOrder", () => {
         market: {
           ticker: "TEST-MARKET",
           status: "open",
-          yes_ask: 60,
+          yes_ask_dollars: "0.60",
+          yes_bid_dollars: "0.59",
         },
       },
     });

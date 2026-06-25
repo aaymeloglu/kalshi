@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { MarketApi } from "kalshi-typescript";
 import { z } from "zod";
+import { cents, fp } from "../schema.js";
 
 /** Schema for get_orderbook tool parameters */
 const GetOrderbookSchema = z.object({
@@ -44,7 +45,7 @@ export function registerGetOrderbook(server: McpServer, marketApi: MarketApi) {
           params.depth
         );
 
-        const orderbook = response.data.orderbook;
+        const orderbook = response.data.orderbook_fp;
 
         if (!orderbook) {
           return {
@@ -58,8 +59,7 @@ export function registerGetOrderbook(server: McpServer, marketApi: MarketApi) {
           };
         }
 
-        // Orderbook has 'true' (yes bids) and 'false' (no bids) arrays
-        // Each entry is [price, quantity]
+        // Each level is [price_dollars, quantity_fp]; prices reported in cents.
         const yesBids = orderbook.yes_dollars || [];
         const noBids = orderbook.no_dollars || [];
 
@@ -67,22 +67,23 @@ export function registerGetOrderbook(server: McpServer, marketApi: MarketApi) {
         const formattedOrderbook = {
           ticker: params.ticker,
           yes_bids: yesBids.map((level) => ({
-            price_dollars: level[0],
-            quantity: level[1],
+            price: cents(level[0]),
+            quantity: fp(level[1]),
           })),
           no_bids: noBids.map((level) => ({
-            price_dollars: level[0],
-            quantity: level[1],
+            price: cents(level[0]),
+            quantity: fp(level[1]),
           })),
         };
 
-        // Calculate summary stats
+        // Calculate summary stats (best bid is the last/highest level)
         const summary = {
           yes_levels: yesBids.length,
           no_levels: noBids.length,
           best_yes_bid:
-            yesBids.length > 0 ? yesBids[yesBids.length - 1][0] : null,
-          best_no_bid: noBids.length > 0 ? noBids[noBids.length - 1][0] : null,
+            yesBids.length > 0 ? cents(yesBids[yesBids.length - 1][0]) : null,
+          best_no_bid:
+            noBids.length > 0 ? cents(noBids[noBids.length - 1][0]) : null,
         };
 
         return {

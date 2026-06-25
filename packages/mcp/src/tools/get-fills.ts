@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PortfolioApi } from "kalshi-typescript";
 import { z } from "zod";
+import { fp, cents } from "../schema.js";
 
 /** Schema for get_fills tool parameters */
 const GetFillsSchema = z.object({
@@ -63,27 +64,31 @@ export function registerGetFills(server: McpServer, portfolioApi: PortfolioApi) 
         const cursor = response.data.cursor;
 
         // Format fills for readable output
-        const formattedFills = fills.map((fill) => ({
-          fill_id: fill.fill_id,
-          order_id: fill.order_id,
-          ticker: fill.ticker,
-          // Trade details
-          side: fill.side,
-          action: fill.action,
-          // Pricing
-          yes_price: fill.yes_price,
-          no_price: fill.no_price,
-          count: fill.count,
-          // Timing
-          created_time: fill.created_time,
-          // Costs
-          is_taker: fill.is_taker,
-        }));
+        const formattedFills = fills.map((fill) => {
+          return {
+            fill_id: fill.fill_id,
+            order_id: fill.order_id,
+            ticker: fill.ticker,
+            // Direction: outcome_side is the YES/NO exposure, book_side is bid/ask
+            outcome_side: fill.outcome_side,
+            book_side: fill.book_side,
+            // Pricing (cents) and size
+            yes_price: cents(fill.yes_price_dollars),
+            no_price: cents(fill.no_price_dollars),
+            count: fp(fill.count_fp),
+            // Costs (dollars)
+            fees_dollars: fp(fill.fee_cost),
+            // Timing
+            created_time: fill.created_time,
+            is_taker: fill.is_taker,
+          };
+        });
 
         // Calculate summary
-        const totalVolume = fills.reduce((sum, f) => sum + (f.count || 0), 0);
-        const buyFills = fills.filter((f) => f.action === "buy");
-        const sellFills = fills.filter((f) => f.action === "sell");
+        const totalVolume = formattedFills.reduce(
+          (sum, f) => sum + (f.count || 0),
+          0
+        );
 
         return {
           content: [
@@ -95,8 +100,6 @@ export function registerGetFills(server: McpServer, portfolioApi: PortfolioApi) 
                   summary: {
                     total: fills.length,
                     total_volume: totalVolume,
-                    buys: buyFills.length,
-                    sells: sellFills.length,
                   },
                   cursor,
                 },

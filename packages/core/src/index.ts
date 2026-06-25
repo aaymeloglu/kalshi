@@ -80,33 +80,3 @@ export {
   type WsMessage,
   WS_ENDPOINTS,
 } from "./websocket/index.js";
-
-// Market Making primitives
-export {
-  OrderManager,
-  InventoryTracker,
-  RiskManager,
-  LocalOrderbook,
-  OrderbookManager,
-  DEFAULT_RISK_LIMITS,
-  type Side,
-  type Action,
-  type OrderStatus,
-  type ManagedOrder,
-  type Quote,
-  type Position,
-  type RiskLimits,
-  type RiskCheckResult,
-  type Fill,
-  type PnLSummary,
-  type ComplianceConfig,
-  type LiquidityCondition,
-  type AvailabilityMetrics,
-  type AuditRecord,
-  type CreateOrderInput,
-  type PlaceOrderResult,
-  type PriceLevel,
-  type OrderbookSnapshot,
-  type OrderbookDelta,
-  type BBO,
-} from "./mm/index.js";

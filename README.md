@@ -7,16 +7,34 @@
 
 > Command-native tools for Kalshi prediction markets — MCP server, Agent Skills, and more.
 
+> **⚠️ Fork notice — read-only/analysis build**
+>
+> This fork tracks Kalshi's current API. Two things changed materially from upstream:
+>
+> 1. **Fixed-point schema migration.** Kalshi moved its numeric fields to a
+>    fixed-point string schema (`*_dollars` for money/quotes, `*_fp` for
+>    counts/sizes). Every read tool — markets, events, fills, **settlements (now
+>    with real net P&L)**, positions, orderbook, trades, orders — is migrated and
+>    verified against the live API. Upstream still reads the retired field names
+>    and silently returns zeros.
+> 2. **Order-write tools are stubbed.** Kalshi retired the V1 order endpoints
+>    (they now return HTTP 410); the V2 replacement uses a different bid/ask order
+>    model. `create_order`, `cancel_order`, and `batch_cancel_orders` return a
+>    clear deprecation notice pending a V2 migration. The market-maker app and TUI
+>    (which depended on the V1 order API) have been removed from this fork.
+>
+> Net: a focused, correct **read-only Kalshi data/analysis MCP**. If you need order
+> placement or the market maker, use upstream until the V2 order migration lands.
+
 ## Features
 
-- 🤖 **14 MCP Tools** — Markets, events, portfolio, and order management
+- 🤖 **MCP Read Tools** — Markets, events, orderbook, trades, orders, fills, settlements (net P&L), positions, balance
 - 🧠 **Agent Skills** — Code-first alternative for Claude Code/API
-- 📈 **Real Trading** — Place and cancel orders via AI agents
+- 💵 **Real Net P&L** — Settlements report cost basis, fees, and net P&L (not just gross payouts)
 - 🔐 **Secure Auth** — RSA-PSS authentication with the official SDK
 - 📡 **WebSocket** — Real-time market data streaming
-- 🤑 **Market Maker** — Automated quoting bot with 5 strategies, market scanner, and risk controls
 - 🌤️ **Weather Intelligence** — NWS forecast integration with probability model and fair value pricing
-- 📋 **MM Compliance** — Formal Market Maker Program support (CFTC Rule 40.6(a)) with availability tracking and audit logging
+- ⚙️ **Order tools stubbed** — `create_order`/`cancel_order`/`batch_cancel_orders` await the V2 (bid/ask) order migration
 - ⚡ **TypeScript** — Fully typed, modern ESM package
 - 📦 **NX Monorepo** — Scalable, cacheable builds
 
@@ -32,10 +50,8 @@
 | Package | Description | Status |
 |---------|-------------|--------|
 | [`@newyorkcompute/kalshi-mcp`](./packages/mcp) | MCP server for AI agents | [![npm](https://img.shields.io/npm/v/@newyorkcompute/kalshi-mcp)](https://www.npmjs.com/package/@newyorkcompute/kalshi-mcp) |
-| [`@newyorkcompute/kalshi-tui`](./packages/tui) | Terminal UI dashboard | [![npm](https://img.shields.io/npm/v/@newyorkcompute/kalshi-tui)](https://www.npmjs.com/package/@newyorkcompute/kalshi-tui) |
 | [`@newyorkcompute/kalshi-core`](./packages/core) | Shared SDK utilities | [![npm](https://img.shields.io/npm/v/@newyorkcompute/kalshi-core)](https://www.npmjs.com/package/@newyorkcompute/kalshi-core) |
 | [`@newyorkcompute/kalshi-weather`](./packages/weather) | Weather intelligence & fair value | [![npm](https://img.shields.io/npm/v/@newyorkcompute/kalshi-weather)](https://www.npmjs.com/package/@newyorkcompute/kalshi-weather) |
-| [`@newyorkcompute/kalshi-mm`](./apps/mm) | Market maker bot | 🚧 Internal |
 | [`kalshi-trading`](./skills/kalshi-trading) | Agent Skill for Claude | [![npm](https://img.shields.io/badge/npm-skill-lightgrey?logo=npm&label=skill)](https://github.com/newyorkcompute/kalshi/tree/main/skills/kalshi-trading) |
 
 ## Quick Start

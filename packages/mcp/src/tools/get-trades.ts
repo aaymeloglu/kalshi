@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { MarketApi } from "kalshi-typescript";
 import { z } from "zod";
+import { cents, fp } from "../schema.js";
 
 /** Schema for get_trades tool parameters */
 const GetTradesSchema = z.object({
@@ -65,9 +66,9 @@ export function registerGetTrades(server: McpServer, marketApi: MarketApi) {
           trade_id: trade.trade_id,
           ticker: trade.ticker,
           // Trade details
-          count: trade.count,
-          yes_price: trade.yes_price,
-          no_price: trade.no_price,
+          count: fp(trade.count_fp),
+          yes_price: cents(trade.yes_price_dollars),
+          no_price: cents(trade.no_price_dollars),
           taker_side: trade.taker_side,
           // Timing
           created_time: trade.created_time,

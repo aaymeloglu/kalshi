@@ -20,7 +20,6 @@ export {
   GetEventsStatusEnum,
   CreateOrderRequestSideEnum,
   CreateOrderRequestActionEnum,
-  CreateOrderRequestTypeEnum,
 } from "kalshi-typescript";
 
 /**

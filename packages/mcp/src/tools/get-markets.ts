@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { MarketApi, GetMarketsStatusEnum } from "kalshi-typescript";
 import { z } from "zod";
+import { cents, fp } from "../schema.js";
 
 /** Schema for get_markets tool parameters */
 const GetMarketsSchema = z.object({
@@ -68,6 +69,7 @@ export function registerGetMarkets(server: McpServer, marketApi: MarketApi) {
           params.series_ticker,
           undefined, // minCreatedTs
           undefined, // maxCreatedTs
+          undefined, // minUpdatedTs
           undefined, // maxCloseTs
           undefined, // minCloseTs
           undefined, // minSettledTs
@@ -85,14 +87,14 @@ export function registerGetMarkets(server: McpServer, marketApi: MarketApi) {
           title: market.title,
           subtitle: market.subtitle,
           status: market.status,
-          yes_bid: market.yes_bid,
-          yes_ask: market.yes_ask,
-          no_bid: market.no_bid,
-          no_ask: market.no_ask,
-          last_price: market.last_price,
-          volume: market.volume,
-          volume_24h: market.volume_24h,
-          open_interest: market.open_interest,
+          yes_bid: cents(market.yes_bid_dollars),
+          yes_ask: cents(market.yes_ask_dollars),
+          no_bid: cents(market.no_bid_dollars),
+          no_ask: cents(market.no_ask_dollars),
+          last_price: cents(market.last_price_dollars),
+          volume: fp(market.volume_fp),
+          volume_24h: fp(market.volume_24h_fp),
+          open_interest: fp(market.open_interest_fp),
           event_ticker: market.event_ticker,
           close_time: market.close_time,
         }));

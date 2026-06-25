@@ -76,26 +76,7 @@ describe("create_order tool", () => {
     );
   });
 
-  it("should create order and return formatted response", async () => {
-    const mockOrder = {
-      order_id: "order-456",
-      ticker: "KXBTC-25JAN03-B100500",
-      status: "resting",
-      side: "yes",
-      action: "buy",
-      type: "limit",
-      yes_price: 45,
-      no_price: 55,
-      initial_count: 10,
-      fill_count: 0,
-      remaining_count: 10,
-      created_time: "2024-12-21T00:00:00Z",
-    };
-
-    mockOrdersApi.createOrder.mockResolvedValue({
-      data: { order: mockOrder },
-    });
-
+  it("should return a deprecation notice instead of placing an order", async () => {
     const result = await registeredTool.handler({
       ticker: "KXBTC-25JAN03-B100500",
       side: "yes",
@@ -104,63 +85,16 @@ describe("create_order tool", () => {
       yes_price: 45,
     });
 
-    const parsed = JSON.parse(
-      (result as { content: [{ text: string }] }).content[0].text
-    );
-    expect(parsed.success).toBe(true);
-    expect(parsed.order.order_id).toBe("order-456");
-    expect(parsed.order.status).toBe("resting");
-  });
-
-  it("should pass correct parameters to API", async () => {
-    mockOrdersApi.createOrder.mockResolvedValue({
-      data: { order: { order_id: "test" } },
-    });
-
-    await registeredTool.handler({
-      ticker: "KXBTC-25JAN03-B100500",
-      side: "yes",
-      action: "buy",
-      count: 10,
-      type: "limit",
-      yes_price: 45,
-    });
-
-    expect(mockOrdersApi.createOrder).toHaveBeenCalledWith({
-      ticker: "KXBTC-25JAN03-B100500",
-      side: "yes",
-      action: "buy",
-      count: 10,
-      type: "limit",
-      yes_price: 45,
-      no_price: undefined,
-      client_order_id: undefined,
-      expiration_ts: undefined,
-    });
-  });
-
-  it("should return error on validation failure", async () => {
-    // Mock insufficient balance
-    mockPortfolioApi.getBalance.mockResolvedValue({
-      data: { balance: 100 }, // Only $1 balance
-    });
-
-    const result = await registeredTool.handler({
-      ticker: "KXBTC-25JAN03-B100500",
-      side: "yes",
-      action: "buy",
-      count: 10,
-      yes_price: 45, // Costs 450¢
-    });
+    expect((result as { isError?: boolean }).isError).toBe(true);
 
     const parsed = JSON.parse(
       (result as { content: [{ text: string }] }).content[0].text
     );
     expect(parsed.success).toBe(false);
-    expect(parsed.errors.some((e: string) => e.includes("Insufficient"))).toBe(
-      true
-    );
-    expect(result).toHaveProperty("isError", true);
+    expect(parsed.error).toBe("tool_disabled_v1_order_endpoint_removed");
+
+    // The stubbed tool no longer touches the SDK.
+    expect(mockOrdersApi.createOrder).not.toHaveBeenCalled();
   });
 });
 

@@ -53,7 +53,7 @@ describe("get_orderbook tool", () => {
     };
 
     mockMarketApi.getMarketOrderbook.mockResolvedValue({
-      data: { orderbook: mockOrderbook },
+      data: { orderbook_fp: mockOrderbook },
     });
 
     const result = await registeredTool.handler({
@@ -78,7 +78,7 @@ describe("get_orderbook tool", () => {
   it("should pass depth parameter to API", async () => {
     mockMarketApi.getMarketOrderbook.mockResolvedValue({
       data: {
-        orderbook: {
+        orderbook_fp: {
           yes_dollars: [],
           no_dollars: [],
         },
@@ -99,7 +99,7 @@ describe("get_orderbook tool", () => {
   it("should handle empty orderbook", async () => {
     mockMarketApi.getMarketOrderbook.mockResolvedValue({
       data: {
-        orderbook: {
+        orderbook_fp: {
           yes_dollars: [],
           no_dollars: [],
         },
@@ -123,7 +123,7 @@ describe("get_orderbook tool", () => {
 
   it("should return error when orderbook not found", async () => {
     mockMarketApi.getMarketOrderbook.mockResolvedValue({
-      data: { orderbook: null },
+      data: { orderbook_fp: null },
     });
 
     const result = await registeredTool.handler({ ticker: "INVALID-TICKER" });

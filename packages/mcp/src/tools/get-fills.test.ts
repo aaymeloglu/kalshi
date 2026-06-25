@@ -44,11 +44,12 @@ describe("get_fills tool", () => {
         fill_id: "fill-123",
         order_id: "order-456",
         ticker: "KXBTC-25JAN03-B100500",
-        side: "yes",
-        action: "buy",
-        yes_price: 45,
-        no_price: 55,
-        count: 10,
+        outcome_side: "yes",
+        book_side: "bid",
+        yes_price_dollars: "0.45",
+        no_price_dollars: "0.55",
+        count_fp: "10",
+        fee_cost: "0.05",
         created_time: "2024-12-21T00:00:00Z",
         is_taker: true,
       },
@@ -68,10 +69,11 @@ describe("get_fills tool", () => {
     );
     expect(parsed.fills).toHaveLength(1);
     expect(parsed.fills[0].fill_id).toBe("fill-123");
+    expect(parsed.fills[0].outcome_side).toBe("yes");
+    expect(parsed.fills[0].yes_price).toBe(45);
+    expect(parsed.fills[0].count).toBe(10);
     expect(parsed.summary.total).toBe(1);
     expect(parsed.summary.total_volume).toBe(10);
-    expect(parsed.summary.buys).toBe(1);
-    expect(parsed.summary.sells).toBe(0);
   });
 
   it("should filter by ticker", async () => {

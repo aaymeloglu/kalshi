@@ -42,14 +42,10 @@ describe("get_positions tool", () => {
     const mockPositions = [
       {
         ticker: "KXBTC-25JAN03-B100500",
-        position: 10, // 10 YES contracts
-        total_traded: 5000,
+        position_fp: "10", // 10 YES contracts
         total_traded_dollars: "50.0000",
-        market_exposure: 4500,
         market_exposure_dollars: "45.0000",
-        realized_pnl: 500,
         realized_pnl_dollars: "5.0000",
-        fees_paid: 50,
         fees_paid_dollars: "0.5000",
         resting_orders_count: 2,
       },

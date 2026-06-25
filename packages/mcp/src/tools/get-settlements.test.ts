@@ -45,22 +45,26 @@ describe("get_settlements tool", () => {
     const mockSettlements = [
       {
         ticker: "KXBTC-25JAN03-B100500",
+        event_ticker: "KXBTC",
         market_result: "yes",
-        yes_count: 10,
-        yes_total_cost: 450,
-        no_count: 0,
-        no_total_cost: 0,
-        revenue: 1000,
+        yes_count_fp: "10",
+        yes_total_cost_dollars: "4.50",
+        no_count_fp: "0",
+        no_total_cost_dollars: "0",
+        revenue: 1000, // cents (gross payout)
+        fee_cost: "0",
         settled_time: "2024-12-21T00:00:00Z",
       },
       {
         ticker: "KXINX-25JAN03-B19500",
+        event_ticker: "KXINX",
         market_result: "no",
-        yes_count: 5,
-        yes_total_cost: 300,
-        no_count: 0,
-        no_total_cost: 0,
-        revenue: 0,
+        yes_count_fp: "5",
+        yes_total_cost_dollars: "3.00",
+        no_count_fp: "0",
+        no_total_cost_dollars: "0",
+        revenue: 0, // cents
+        fee_cost: "0",
         settled_time: "2024-12-21T01:00:00Z",
       },
     ];
@@ -80,11 +84,16 @@ describe("get_settlements tool", () => {
     expect(parsed.settlements).toHaveLength(2);
     expect(parsed.settlements[0].ticker).toBe("KXBTC-25JAN03-B100500");
     expect(parsed.settlements[0].market_result).toBe("yes");
-    expect(parsed.settlements[0].revenue).toBe(1000);
+    expect(parsed.settlements[0].yes_count).toBe(10);
+    expect(parsed.settlements[0].revenue_dollars).toBe(10);
+    expect(parsed.settlements[0].net_pnl_dollars).toBe(5.5);
+    expect(parsed.settlements[1].net_pnl_dollars).toBe(-3);
     expect(parsed.summary.total).toBe(2);
-    expect(parsed.summary.total_revenue_cents).toBe(1000);
-    expect(parsed.summary.total_revenue_dollars).toBe("10.00");
-    expect(parsed.summary.profitable_settlements).toBe(1);
+    expect(parsed.summary.total_cost_dollars).toBe(7.5);
+    expect(parsed.summary.total_revenue_dollars).toBe(10);
+    expect(parsed.summary.net_pnl_dollars).toBe(2.5);
+    expect(parsed.summary.net_positive).toBe(1);
+    expect(parsed.summary.net_negative).toBe(1);
   });
 
   it("should filter by ticker", async () => {

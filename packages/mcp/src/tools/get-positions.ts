@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PortfolioApi } from "kalshi-typescript";
 import { z } from "zod";
+import { fp } from "../schema.js";
 
 /** Schema for get_positions tool parameters */
 const GetPositionsSchema = z.object({
@@ -64,27 +65,27 @@ export function registerGetPositions(
         const cursor = response.data.cursor;
 
         // Format positions for readable output
-        const formattedPositions = positions.map((pos) => ({
-          ticker: pos.ticker,
-          // Position info
-          position: pos.position,
-          total_traded_cents: pos.total_traded,
-          total_traded_dollars: pos.total_traded_dollars,
-          // Exposure
-          market_exposure_cents: pos.market_exposure,
-          market_exposure_dollars: pos.market_exposure_dollars,
-          // P&L
-          realized_pnl_cents: pos.realized_pnl,
-          realized_pnl_dollars: pos.realized_pnl_dollars,
-          // Fees
-          fees_paid_cents: pos.fees_paid,
-          fees_paid_dollars: pos.fees_paid_dollars,
-          // Resting orders
-          resting_orders_count: pos.resting_orders_count,
-        }));
+        const formattedPositions = positions.map((pos) => {
+          return {
+            ticker: pos.ticker,
+            // Signed contract count (+ = long YES, - = long NO)
+            position: fp(pos.position_fp),
+            total_traded_dollars: fp(pos.total_traded_dollars),
+            // Exposure (dollars)
+            market_exposure_dollars: fp(pos.market_exposure_dollars),
+            // P&L (dollars)
+            realized_pnl_dollars: fp(pos.realized_pnl_dollars),
+            // Fees (dollars)
+            fees_paid_dollars: fp(pos.fees_paid_dollars),
+            // Resting orders
+            resting_orders_count: pos.resting_orders_count,
+          };
+        });
 
         // Calculate summary
-        const totalPositions = positions.filter((p) => p.position !== 0).length;
+        const totalPositions = formattedPositions.filter(
+          (p) => (p.position ?? 0) !== 0
+        ).length;
 
         return {
           content: [

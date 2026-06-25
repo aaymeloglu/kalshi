@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { PortfolioApi } from "kalshi-typescript";
 import { z } from "zod";
+import { fp } from "../schema.js";
 
 /** Schema for get_settlements tool parameters */
 const GetSettlementsSchema = z.object({
@@ -65,27 +66,60 @@ export function registerGetSettlements(
         const settlements = response.data.settlements || [];
         const cursor = response.data.cursor;
 
-        // Format settlements for readable output
-        const formattedSettlements = settlements.map((settlement) => ({
-          ticker: settlement.ticker,
-          market_result: settlement.market_result,
-          // Position at settlement
-          no_count: settlement.no_count,
-          no_total_cost: settlement.no_total_cost,
-          yes_count: settlement.yes_count,
-          yes_total_cost: settlement.yes_total_cost,
-          // Payouts
-          revenue: settlement.revenue,
-          // Timing
-          settled_time: settlement.settled_time,
-        }));
+        // Format settlements for readable output.
+        //
+        // Net P&L is the only honest measure of a settlement's result:
+        //   net = revenue - (yes_total_cost + no_total_cost) - fees
+        // `revenue` is the gross payout in CENTS; cost/fee fields are dollar
+        // fixed-point strings under the `*_dollars` schema. The legacy
+        // `yes_total_cost`/`yes_count` keys are no longer populated.
+        const formattedSettlements = settlements.map((settlement) => {
+          const yesCost = fp(settlement.yes_total_cost_dollars) ?? 0;
+          const noCost = fp(settlement.no_total_cost_dollars) ?? 0;
+          const fees = fp(settlement.fee_cost) ?? 0;
+          const revenueDollars = (settlement.revenue ?? 0) / 100;
+          const netPnl = revenueDollars - yesCost - noCost - fees;
+          return {
+            ticker: settlement.ticker,
+            event_ticker: settlement.event_ticker,
+            market_result: settlement.market_result,
+            // Position at settlement
+            no_count: fp(settlement.no_count_fp),
+            no_total_cost_dollars: noCost,
+            yes_count: fp(settlement.yes_count_fp),
+            yes_total_cost_dollars: yesCost,
+            // Economics (all in dollars)
+            revenue_dollars: Number(revenueDollars.toFixed(2)),
+            fees_dollars: Number(fees.toFixed(2)),
+            net_pnl_dollars: Number(netPnl.toFixed(2)),
+            // Timing
+            settled_time: settlement.settled_time,
+          };
+        });
 
-        // Calculate summary
-        const totalRevenue = settlements.reduce(
-          (sum, s) => sum + (s.revenue || 0),
+        // Summary: real net P&L, not gross revenue. The previous
+        // `total_revenue_cents`/`profitable_settlements` summed gross payouts
+        // and ignored cost basis entirely, badly overstating performance.
+        const round2 = (n: number) => Number(n.toFixed(2));
+        const totalCost = formattedSettlements.reduce(
+          (sum, s) => sum + s.yes_total_cost_dollars + s.no_total_cost_dollars,
           0
         );
-        const wins = settlements.filter((s) => (s.revenue || 0) > 0);
+        const totalRevenue = formattedSettlements.reduce(
+          (sum, s) => sum + s.revenue_dollars,
+          0
+        );
+        const totalFees = formattedSettlements.reduce(
+          (sum, s) => sum + s.fees_dollars,
+          0
+        );
+        const netPnl = totalRevenue - totalCost - totalFees;
+        const netPositive = formattedSettlements.filter(
+          (s) => s.net_pnl_dollars > 0
+        ).length;
+        const netNegative = formattedSettlements.filter(
+          (s) => s.net_pnl_dollars < 0
+        ).length;
 
         return {
           content: [
@@ -96,9 +130,12 @@ export function registerGetSettlements(
                   settlements: formattedSettlements,
                   summary: {
                     total: settlements.length,
-                    total_revenue_cents: totalRevenue,
-                    total_revenue_dollars: (totalRevenue / 100).toFixed(2),
-                    profitable_settlements: wins.length,
+                    total_cost_dollars: round2(totalCost),
+                    total_revenue_dollars: round2(totalRevenue),
+                    total_fees_dollars: round2(totalFees),
+                    net_pnl_dollars: round2(netPnl),
+                    net_positive: netPositive,
+                    net_negative: netNegative,
                   },
                   cursor,
                 },

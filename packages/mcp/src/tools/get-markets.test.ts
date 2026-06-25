@@ -56,14 +56,14 @@ describe("get_markets tool", () => {
         title: "Bitcoin above $100,500?",
         subtitle: "Will BTC be above $100,500 on Jan 3?",
         status: "active",
-        yes_bid: 45,
-        yes_ask: 47,
-        no_bid: 53,
-        no_ask: 55,
-        last_price: 46,
-        volume: 10000,
-        volume_24h: 500,
-        open_interest: 2500,
+        yes_bid_dollars: "0.45",
+        yes_ask_dollars: "0.47",
+        no_bid_dollars: "0.53",
+        no_ask_dollars: "0.55",
+        last_price_dollars: "0.46",
+        volume_fp: "10000",
+        volume_24h_fp: "500",
+        open_interest_fp: "2500",
         event_ticker: "KXBTC",
         close_time: "2025-01-03T00:00:00Z",
       },
@@ -114,6 +114,7 @@ describe("get_markets tool", () => {
       undefined, // seriesTicker
       undefined, // minCreatedTs
       undefined, // maxCreatedTs
+      undefined, // minUpdatedTs
       undefined, // maxCloseTs
       undefined, // minCloseTs
       undefined, // minSettledTs

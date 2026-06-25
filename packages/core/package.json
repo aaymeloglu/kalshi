@@ -43,7 +43,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "kalshi-typescript": "^3.3.0",
+    "kalshi-typescript": "^3.22.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

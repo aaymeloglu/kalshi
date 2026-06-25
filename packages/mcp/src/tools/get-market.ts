@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { MarketApi } from "kalshi-typescript";
 import { z } from "zod";
+import { cents, fp } from "../schema.js";
 
 /** Schema for get_market tool parameters */
 const GetMarketSchema = z.object({
@@ -62,23 +63,22 @@ export function registerGetMarket(server: McpServer, marketApi: MarketApi) {
 
           // Event info
           event_ticker: market.event_ticker,
-          category: market.category,
 
           // Pricing
-          yes_bid: market.yes_bid,
-          yes_ask: market.yes_ask,
-          no_bid: market.no_bid,
-          no_ask: market.no_ask,
-          last_price: market.last_price,
-          previous_yes_bid: market.previous_yes_bid,
-          previous_yes_ask: market.previous_yes_ask,
-          previous_price: market.previous_price,
+          yes_bid: cents(market.yes_bid_dollars),
+          yes_ask: cents(market.yes_ask_dollars),
+          no_bid: cents(market.no_bid_dollars),
+          no_ask: cents(market.no_ask_dollars),
+          last_price: cents(market.last_price_dollars),
+          previous_yes_bid: cents(market.previous_yes_bid_dollars),
+          previous_yes_ask: cents(market.previous_yes_ask_dollars),
+          previous_price: cents(market.previous_price_dollars),
 
           // Volume
-          volume: market.volume,
-          volume_24h: market.volume_24h,
-          open_interest: market.open_interest,
-          liquidity: market.liquidity,
+          volume: fp(market.volume_fp),
+          volume_24h: fp(market.volume_24h_fp),
+          open_interest: fp(market.open_interest_fp),
+          liquidity: fp(market.liquidity_dollars),
 
           // Timing
           created_time: market.created_time,
@@ -92,9 +92,9 @@ export function registerGetMarket(server: McpServer, marketApi: MarketApi) {
           rules_secondary: market.rules_secondary,
 
           // Settlement
-          settlement_value: market.settlement_value,
+          settlement_value: fp(market.settlement_value_dollars),
           settlement_timer_seconds: market.settlement_timer_seconds,
-          notional_value: market.notional_value,
+          notional_value: fp(market.notional_value_dollars),
 
           // Strike info
           strike_type: market.strike_type,

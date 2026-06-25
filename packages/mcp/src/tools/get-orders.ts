@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { OrdersApi } from "kalshi-typescript";
 import { z } from "zod";
+import { cents, fp } from "../schema.js";
 
 /** Schema for get_orders tool parameters */
 const GetOrdersSchema = z.object({
@@ -80,20 +81,20 @@ export function registerGetOrders(server: McpServer, ordersApi: OrdersApi) {
           type: order.type,
           status: order.status,
           // Pricing
-          yes_price: order.yes_price,
-          no_price: order.no_price,
+          yes_price: cents(order.yes_price_dollars),
+          no_price: cents(order.no_price_dollars),
           // Quantities
-          initial_count: order.initial_count,
-          fill_count: order.fill_count,
-          remaining_count: order.remaining_count,
+          initial_count: fp(order.initial_count_fp),
+          fill_count: fp(order.fill_count_fp),
+          remaining_count: fp(order.remaining_count_fp),
           // Timing
           created_time: order.created_time,
           expiration_time: order.expiration_time,
           // Fill costs
-          taker_fill_cost: order.taker_fill_cost,
-          maker_fill_cost: order.maker_fill_cost,
-          taker_fees: order.taker_fees,
-          maker_fees: order.maker_fees,
+          taker_fill_cost: fp(order.taker_fill_cost_dollars),
+          maker_fill_cost: fp(order.maker_fill_cost_dollars),
+          taker_fees: fp(order.taker_fees_dollars),
+          maker_fees: fp(order.maker_fees_dollars),
         }));
 
         // Calculate summary
