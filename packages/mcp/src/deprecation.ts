@@ -28,6 +28,7 @@ export function orderWriteDeprecated(tool: string) {
               "uses a bid/ask order-book model. Read-only market and portfolio " +
               "tools are fully functional.",
             docs: "https://docs.kalshi.com/api-reference/orders/create-order",
+            tracking_issue: "https://github.com/aaymeloglu/kalshi/issues/1",
           },
           null,
           2
