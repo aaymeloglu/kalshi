@@ -1,50 +1,53 @@
 /**
  * Create Order Tool
  *
- * MCP tool for placing new orders on Kalshi markets.
- * Includes pre-flight validation to check market status, balance, and price reasonableness.
+ * Places a limit order on Kalshi via the V2 order API (`/portfolio/events/orders`).
+ * Kalshi retired the V1 write endpoints (HTTP 410); this uses the V2 bid/ask book
+ * through the self-contained {@link OrdersV2Client}.
  *
- * ⚠️ CAUTION: This tool executes real trades with real money.
+ * ⚠️ CAUTION: this places a REAL order with REAL money on a live market.
  *
  * @module tools/create-order
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { OrdersApi, MarketApi, PortfolioApi } from "kalshi-typescript";
 import { z } from "zod";
-import { orderWriteDeprecated } from "../deprecation.js";
+import {
+  type OrdersV2Client,
+  toCreateOrderV2Request,
+  statusFromV2Counts,
+} from "../orders-v2.js";
 
 /** Schema for create_order tool parameters */
 const CreateOrderSchema = z.object({
-  ticker: z.string().describe("Market ticker to place order on"),
-  side: z.enum(["yes", "no"]).describe("Side of the order: 'yes' or 'no'"),
+  ticker: z.string().describe("Market ticker to place the order on"),
+  side: z.enum(["yes", "no"]).describe("Contract side: 'yes' or 'no'"),
   action: z.enum(["buy", "sell"]).describe("Action: 'buy' or 'sell'"),
-  count: z.number().min(1).describe("Number of contracts"),
-  type: z
-    .enum(["limit", "market"])
-    .optional()
-    .default("limit")
-    .describe("Order type (default: limit)"),
+  count: z.number().int().min(1).describe("Number of contracts"),
   yes_price: z
     .number()
     .min(1)
     .max(99)
     .optional()
-    .describe("Yes price in cents (1-99). Required for limit orders on yes side."),
+    .describe("Limit price in cents (1-99). Required when side='yes'."),
   no_price: z
     .number()
     .min(1)
     .max(99)
     .optional()
-    .describe("No price in cents (1-99). Required for limit orders on no side."),
+    .describe("Limit price in cents (1-99). Required when side='no'."),
+  post_only: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe(
+      "If true, the order only rests as a maker and is rejected if it would " +
+        "cross the spread (never takes). Default false."
+    ),
   client_order_id: z
     .string()
     .optional()
-    .describe("Optional client-provided order ID for idempotency"),
-  expiration_ts: z
-    .number()
-    .optional()
-    .describe("Unix timestamp when order expires"),
+    .describe("Optional client-provided ID for idempotency"),
 });
 
 type CreateOrderInput = z.infer<typeof CreateOrderSchema>;
@@ -53,24 +56,90 @@ type CreateOrderInput = z.infer<typeof CreateOrderSchema>;
  * Registers the create_order tool with the MCP server.
  *
  * @param server - MCP server instance to register the tool with
- * @param ordersApi - Kalshi Orders API client
- * @param marketApi - Kalshi Market API client (for validation)
- * @param portfolioApi - Kalshi Portfolio API client (for balance check)
+ * @param ordersV2 - V2 order client used to place the order
  */
 export function registerCreateOrder(
   server: McpServer,
-  _ordersApi: OrdersApi,
-  _marketApi: MarketApi,
-  _portfolioApi: PortfolioApi
+  ordersV2: OrdersV2Client
 ) {
   server.tool(
     "create_order",
-    "DISABLED: order placement is pending migration to Kalshi's V2 order API " +
-      "(the V1 endpoint this used now returns HTTP 410). Returns a deprecation notice.",
+    "Place a REAL limit order on a Kalshi market (V2 order API). This spends " +
+      "real money. Provide yes_price when side='yes' or no_price when side='no' " +
+      "(both in cents, 1-99). Use post_only=true to guarantee maker-only.",
     CreateOrderSchema.shape,
-    // Input schema is retained to document the intended interface; the handler
-    // is stubbed until the V2 (bid/ask) order model is implemented.
-    async (_params: CreateOrderInput) => orderWriteDeprecated("create_order")
+    async (params: CreateOrderInput) => {
+      const priceCents =
+        params.side === "yes" ? params.yes_price : params.no_price;
+      if (priceCents == null) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text:
+                `Missing price: side='${params.side}' requires ` +
+                `${params.side === "yes" ? "yes_price" : "no_price"} (in cents).`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      const body = toCreateOrderV2Request({
+        ticker: params.ticker,
+        side: params.side,
+        action: params.action,
+        priceCents,
+        count: params.count,
+        clientOrderId: params.client_order_id,
+        postOnly: params.post_only,
+      });
+
+      try {
+        const res = await ordersV2.createOrder(body);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  success: true,
+                  order_id: res.order_id,
+                  client_order_id: res.client_order_id,
+                  status: statusFromV2Counts(
+                    res.fill_count,
+                    res.remaining_count
+                  ),
+                  fill_count: res.fill_count,
+                  remaining_count: res.remaining_count,
+                  average_fill_price: res.average_fill_price,
+                  submitted: {
+                    ticker: body.ticker,
+                    book_side: body.side,
+                    price_dollars: body.price,
+                    count: body.count,
+                    post_only: body.post_only,
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error placing order for ${params.ticker}: ${message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
   );
 }
-

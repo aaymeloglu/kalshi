@@ -1,16 +1,15 @@
 /**
  * Cancel Order Tool
  *
- * MCP tool for canceling an existing order on Kalshi.
- * Only orders with 'resting' status can be canceled.
+ * Cancels a resting order via the Kalshi V2 order API
+ * (`DELETE /portfolio/events/orders/{id}`).
  *
  * @module tools/cancel-order
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { OrdersApi } from "kalshi-typescript";
 import { z } from "zod";
-import { orderWriteDeprecated } from "../deprecation.js";
+import { type OrdersV2Client } from "../orders-v2.js";
 
 /** Schema for cancel_order tool parameters */
 const CancelOrderSchema = z.object({
@@ -23,16 +22,47 @@ type CancelOrderInput = z.infer<typeof CancelOrderSchema>;
  * Registers the cancel_order tool with the MCP server.
  *
  * @param server - MCP server instance to register the tool with
- * @param _ordersApi - Kalshi Orders API client (unused while stubbed)
+ * @param ordersV2 - V2 order client used to cancel the order
  */
-export function registerCancelOrder(server: McpServer, _ordersApi: OrdersApi) {
+export function registerCancelOrder(server: McpServer, ordersV2: OrdersV2Client) {
   server.tool(
     "cancel_order",
-    "DISABLED: order cancellation is pending migration to Kalshi's V2 order API " +
-      "(the V1 endpoint this used now returns HTTP 410). Returns a deprecation notice.",
+    "Cancel a resting order on Kalshi by its order ID (V2 order API). Returns " +
+      "how many contracts the resting order was reduced by.",
     CancelOrderSchema.shape,
-    // Stubbed until the V2 cancel endpoint (cancelOrderV2) is wired up.
-    async (_params: CancelOrderInput) => orderWriteDeprecated("cancel_order")
+    async (params: CancelOrderInput) => {
+      try {
+        const res = await ordersV2.cancelOrder(params.order_id);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  success: true,
+                  order_id: res.order_id,
+                  reduced_by: res.reduced_by,
+                  ts_ms: res.ts_ms,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error canceling order ${params.order_id}: ${message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
   );
 }
-

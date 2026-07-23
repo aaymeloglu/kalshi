@@ -1,16 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { OrdersApi } from "kalshi-typescript";
 import { registerCancelOrder } from "./cancel-order.js";
-
-// Mock the OrdersApi
-vi.mock("kalshi-typescript", () => ({
-  OrdersApi: vi.fn(),
-}));
+import type { OrdersV2Client } from "../orders-v2.js";
 
 describe("cancel_order tool", () => {
   let server: McpServer;
-  let mockOrdersApi: { cancelOrder: ReturnType<typeof vi.fn> };
+  let mockOrdersV2: { cancelOrder: ReturnType<typeof vi.fn> } & Partial<OrdersV2Client>;
   let registeredTool: {
     name: string;
     handler: (params: Record<string, unknown>) => Promise<unknown>;
@@ -23,14 +18,18 @@ describe("cancel_order tool", () => {
       }),
     } as unknown as McpServer;
 
-    mockOrdersApi = {
-      cancelOrder: vi.fn(),
+    mockOrdersV2 = {
+      cancelOrder: vi.fn().mockResolvedValue({
+        order_id: "order-123",
+        reduced_by: "3.00",
+        ts_ms: 99,
+      }),
     };
 
-    registerCancelOrder(server, mockOrdersApi as unknown as OrdersApi);
+    registerCancelOrder(server, mockOrdersV2 as unknown as OrdersV2Client);
   });
 
-  it("should register the cancel_order tool", () => {
+  it("registers the cancel_order tool", () => {
     expect(server.tool).toHaveBeenCalledWith(
       "cancel_order",
       expect.any(String),
@@ -39,19 +38,24 @@ describe("cancel_order tool", () => {
     );
   });
 
-  it("should return a deprecation notice instead of canceling an order", async () => {
+  it("cancels the order via the V2 client and returns reduced_by", async () => {
     const result = await registeredTool.handler({ order_id: "order-123" });
 
-    expect((result as { isError?: boolean }).isError).toBe(true);
-
+    expect(mockOrdersV2.cancelOrder).toHaveBeenCalledWith("order-123");
     const parsed = JSON.parse(
       (result as { content: [{ text: string }] }).content[0].text
     );
-    expect(parsed.success).toBe(false);
-    expect(parsed.error).toBe("tool_disabled_v1_order_endpoint_removed");
+    expect(parsed.success).toBe(true);
+    expect(parsed.order_id).toBe("order-123");
+    expect(parsed.reduced_by).toBe("3.00");
+  });
 
-    // The stubbed tool no longer touches the SDK.
-    expect(mockOrdersApi.cancelOrder).not.toHaveBeenCalled();
+  it("surfaces API errors as an isError result", async () => {
+    mockOrdersV2.cancelOrder.mockRejectedValueOnce(new Error("order not found"));
+    const result = await registeredTool.handler({ order_id: "missing" });
+    expect((result as { isError?: boolean }).isError).toBe(true);
+    expect(
+      (result as { content: [{ text: string }] }).content[0].text
+    ).toContain("order not found");
   });
 });
-

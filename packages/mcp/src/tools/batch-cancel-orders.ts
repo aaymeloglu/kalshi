@@ -1,16 +1,15 @@
 /**
  * Batch Cancel Orders Tool
  *
- * MCP tool for canceling multiple orders at once on Kalshi.
- * Can cancel up to 20 orders in a single request.
+ * Cancels up to 20 resting orders in one V2 request
+ * (`DELETE /portfolio/events/orders/batched`).
  *
  * @module tools/batch-cancel-orders
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { OrdersApi } from "kalshi-typescript";
 import { z } from "zod";
-import { orderWriteDeprecated } from "../deprecation.js";
+import { type OrdersV2Client } from "../orders-v2.js";
 
 /** Schema for batch_cancel_orders tool parameters */
 const BatchCancelOrdersSchema = z.object({
@@ -27,20 +26,45 @@ type BatchCancelOrdersInput = z.infer<typeof BatchCancelOrdersSchema>;
  * Registers the batch_cancel_orders tool with the MCP server.
  *
  * @param server - MCP server instance to register the tool with
- * @param _ordersApi - Kalshi Orders API client (unused while stubbed)
+ * @param ordersV2 - V2 order client used to cancel the orders
  */
 export function registerBatchCancelOrders(
   server: McpServer,
-  _ordersApi: OrdersApi
+  ordersV2: OrdersV2Client
 ) {
   server.tool(
     "batch_cancel_orders",
-    "DISABLED: batch order cancellation is pending migration to Kalshi's V2 order " +
-      "API (the V1 endpoint this used now returns HTTP 410). Returns a deprecation notice.",
+    "Cancel up to 20 resting orders in a single request by their order IDs " +
+      "(V2 order API). Returns per-order results, including any per-order errors.",
     BatchCancelOrdersSchema.shape,
-    // Stubbed until the V2 batch cancel endpoint (batchCancelOrdersV2) is wired up.
-    async (_params: BatchCancelOrdersInput) =>
-      orderWriteDeprecated("batch_cancel_orders")
+    async (params: BatchCancelOrdersInput) => {
+      try {
+        const res = await ordersV2.batchCancelOrders(params.order_ids);
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                { success: true, orders: res.orders },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error batch-canceling orders: ${message}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    }
   );
 }
-

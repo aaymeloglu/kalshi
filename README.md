@@ -17,14 +17,19 @@
 >    with real net P&L)**, positions, orderbook, trades, orders — is migrated and
 >    verified against the live API. Upstream still reads the retired field names
 >    and silently returns zeros.
-> 2. **Order-write tools are stubbed.** Kalshi retired the V1 order endpoints
->    (they now return HTTP 410); the V2 replacement uses a different bid/ask order
->    model. `create_order`, `cancel_order`, and `batch_cancel_orders` return a
->    clear deprecation notice pending a V2 migration. The market-maker app and TUI
->    (which depended on the V1 order API) have been removed from this fork.
+> 2. **Order-write tools run on the V2 API.** Kalshi retired the V1 order
+>    endpoints (HTTP 410) and the SDK still only exposes them, so `create_order`,
+>    `cancel_order`, and `batch_cancel_orders` use a self-contained V2 client
+>    (`src/orders-v2.ts`) that RSA-PSS-signs requests to
+>    `/portfolio/events/orders*`. NO-side intents are mapped onto the single YES
+>    book. Placing orders requires an API key with `write::trade` scope; read-only
+>    keys get a clear `insufficient scope` error. The market-maker app and TUI were
+>    still removed — this fork is the MCP only.
+> 3. **Deci-cent precision.** Price fields preserve 0.1¢ granularity for
+>    `deci_cent` markets (`"0.7350"` → `73.5`) instead of rounding to whole cents.
 >
-> Net: a focused, correct **read-only Kalshi data/analysis MCP**. If you need order
-> placement or the market maker, use upstream until the V2 order migration lands.
+> Net: a focused, correct **Kalshi data/analysis MCP** with working V2 order
+> placement (given a write-scoped key). The market maker itself lives upstream.
 
 ## Features
 
@@ -34,7 +39,7 @@
 - 🔐 **Secure Auth** — RSA-PSS authentication with the official SDK
 - 📡 **WebSocket** — Real-time market data streaming
 - 🌤️ **Weather Intelligence** — NWS forecast integration with probability model and fair value pricing
-- ⚙️ **Order tools stubbed** — `create_order`/`cancel_order`/`batch_cancel_orders` await the V2 (bid/ask) order migration
+- ⚙️ **Order tools (V2)** — `create_order`/`cancel_order`/`batch_cancel_orders` on the V2 bid/ask API (needs a `write::trade`-scoped key)
 - ⚡ **TypeScript** — Fully typed, modern ESM package
 - 📦 **NX Monorepo** — Scalable, cacheable builds
 

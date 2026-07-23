@@ -29,14 +29,19 @@ export function fp(value: string | number | null | undefined): number | null {
 }
 
 /**
- * Convert a dollar-denominated fixed-point string (or number) to integer cents.
+ * Convert a dollar-denominated fixed-point string (or number) to cents.
  *
- * Used for quote/price fields (`yes_bid_dollars`, `last_price_dollars`, ...) so
- * tool output is in whole cents.
+ * Used for quote/price fields (`yes_bid_dollars`, `last_price_dollars`, ...).
+ * Kalshi `deci_cent` markets quote on a 0.1¢ grid (e.g. `"0.7350"` = 73.5¢), so
+ * this preserves 0.1¢ granularity rather than collapsing to whole cents — the
+ * half-cent matters for edge/EV math in analysis. Whole-cent quotes are
+ * unchanged: `"0.7400"` → `74`, `"0.7350"` → `73.5`.
  *
- * @returns price in integer cents, or `null` if the input is missing/unparseable.
+ * @returns price in cents (to 0.1¢), or `null` if the input is missing/unparseable.
  */
 export function cents(value: string | number | null | undefined): number | null {
   const n = fp(value);
-  return n === null ? null : Math.round(n * 100);
+  // Round to the nearest 0.1¢ to keep deci_cent precision while killing the
+  // floating-point noise from `dollars * 100` (e.g. 0.74 * 1000 = 740.0000…).
+  return n === null ? null : Math.round(n * 1000) / 10;
 }

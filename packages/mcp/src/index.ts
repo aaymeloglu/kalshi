@@ -13,6 +13,7 @@ import {
   createOrdersApi,
   createEventsApi,
 } from "./config.js";
+import { createOrdersV2Client } from "./orders-v2.js";
 
 // Market tools
 import { registerGetMarkets } from "./tools/get-markets.js";
@@ -39,7 +40,7 @@ import { registerGetFills } from "./tools/get-fills.js";
 import { registerGetSettlements } from "./tools/get-settlements.js";
 
 export const SERVER_NAME = "kalshi-mcp";
-export const SERVER_VERSION = "0.3.0";
+export const SERVER_VERSION = "0.4.0";
 
 /**
  * Configuration schema for Kalshi API authentication
@@ -91,6 +92,8 @@ export default function createServer(options: CreateServerOptions = {}) {
   const portfolioApi = createPortfolioApi(kalshiConfig);
   const ordersApi = createOrdersApi(kalshiConfig);
   const eventsApi = createEventsApi(kalshiConfig);
+  // V2 order-write client (SDK only exposes the retired V1 write paths).
+  const ordersV2 = createOrdersV2Client(kalshiConfig);
 
   // Create MCP server
   const server = new McpServer({
@@ -114,9 +117,9 @@ export default function createServer(options: CreateServerOptions = {}) {
 
   // Register order tools
   registerGetOrders(server, ordersApi);
-  registerCreateOrder(server, ordersApi, marketApi, portfolioApi);
-  registerCancelOrder(server, ordersApi);
-  registerBatchCancelOrders(server, ordersApi);
+  registerCreateOrder(server, ordersV2);
+  registerCancelOrder(server, ordersV2);
+  registerBatchCancelOrders(server, ordersV2);
 
   // Register fill and settlement tools
   registerGetFills(server, portfolioApi);
