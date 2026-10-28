@@ -1,5 +1,58 @@
 # @newyorkcompute/kalshi-core
 
+## 0.8.0
+
+### Minor Changes
+
+- [#113](https://github.com/newyorkcompute/kalshi/pull/113) [`bbbc2ab`](https://github.com/newyorkcompute/kalshi/commit/bbbc2ab6b9a67c7a85de9f1ca5f161d245443be0) Thanks [@siddharthkul](https://github.com/siddharthkul)! - Mark-to-market risk controls and settlement sync
+
+  - Add `InventoryTracker.settleMarket()` for realizing P&L at settlement
+  - Add `RiskManager.recordPnL()` for non-fill P&L accounting
+  - Bot evaluates drawdown and daily-loss limits on mark-to-market P&L every 30s
+  - YAML-configurable drawdown thresholds (`risk.drawdown`)
+  - Periodic settlement sync clears settled positions from inventory
+
+### Patch Changes
+
+- [#111](https://github.com/newyorkcompute/kalshi/pull/111) [`22cf8a1`](https://github.com/newyorkcompute/kalshi/commit/22cf8a10c5b5a8193e6e9390f30fcf5b5bf12a51) Thanks [@siddharthkul](https://github.com/siddharthkul)! - fix: allow one-sided quotes through RiskManager spread check
+
+## 0.7.0
+
+### Minor Changes
+
+- [#103](https://github.com/newyorkcompute/kalshi/pull/103) [`33bef70`](https://github.com/newyorkcompute/kalshi/commit/33bef7088d05ea18d2b55f30cd408e239d0504e6) Thanks [@siddharthkul](https://github.com/siddharthkul)! - Formal Market Maker Program compliance layer (CFTC Rule 40.6(a))
+
+  ### Compliance Enforcer
+
+  - Wraps strategy output for Covered Products: injects missing bid/ask sides at minimum obligation levels, clamps spread to Schedule II max, generates two-sided obligation quotes when strategy returns empty
+  - Non-covered products pass through untouched
+
+  ### Availability Tracker
+
+  - Rolling 1-hour window uptime tracker per product (98% target)
+  - `wouldBreachTarget()` prevents voluntary withdrawal below target
+
+  ### Audit Logger
+
+  - Structured JSONL audit trail for quote decisions, adjustments, fills, self-trade events, availability snapshots, and config changes
+
+  ### Self-Trade Guard
+
+  - Pre-placement check detects when a new quote would cross own resting orders
+  - Returns cancel-list for the resting side
+
+  ### Risk Manager Enhancements
+
+  - 10x position accountability multiplier for MM-designated covered products (Rule 4.5(a))
+  - Per-contract dynamic position limit caching from Kalshi API
+  - Prefix matching consistent with compliance enforcer
+
+  ### Bot Integration
+
+  - Compliance enforcement inserted in quote pipeline after strategy, before drawdown scaling
+  - Drawdown scaling floors at compliance minSize for covered products
+  - Compliance status exposed via `getState()` API
+
 ## 0.6.3
 
 ### Patch Changes
