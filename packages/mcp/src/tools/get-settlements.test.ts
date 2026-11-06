@@ -96,6 +96,56 @@ describe("get_settlements tool", () => {
     expect(parsed.summary.net_negative).toBe(1);
   });
 
+  it("credits the $1 netting payout when YES and NO were both held (round trip)", async () => {
+    // Real case (GOVPARTYWI-26-R): bought 100 YES @ 52¢, then 100 NO @ 39¢.
+    // Kalshi nets each YES+NO pair for $1 immediately, so `revenue` at
+    // settlement is 0. True P&L = 100 − 52 − 39 − 3.41 = +5.59, not −94.41.
+    mockPortfolioApi.getSettlements.mockResolvedValue({
+      data: {
+        settlements: [
+          {
+            ticker: "GOVPARTYWI-26-R",
+            event_ticker: "GOVPARTYWI-26",
+            market_result: "no",
+            yes_count_fp: "100",
+            yes_total_cost_dollars: "52",
+            no_count_fp: "100",
+            no_total_cost_dollars: "39",
+            revenue: 0,
+            fee_cost: "3.41",
+            settled_time: "2026-11-04T04:30:10Z",
+          },
+          {
+            // Partial netting: 40 pairs netted ($40), 60 YES left settle YES ($60).
+            ticker: "PARTIAL-T1",
+            event_ticker: "PARTIAL",
+            market_result: "yes",
+            yes_count_fp: "100",
+            yes_total_cost_dollars: "50",
+            no_count_fp: "40",
+            no_total_cost_dollars: "20",
+            revenue: 6000,
+            fee_cost: "1",
+            settled_time: "2026-11-04T04:30:10Z",
+          },
+        ],
+        cursor: null,
+      },
+    });
+
+    const result = await registeredTool.handler({});
+    const parsed = JSON.parse(
+      (result as { content: [{ text: string }] }).content[0].text
+    );
+    expect(parsed.settlements[0].netted_pairs).toBe(100);
+    expect(parsed.settlements[0].netting_payout_dollars).toBe(100);
+    expect(parsed.settlements[0].net_pnl_dollars).toBe(5.59);
+    expect(parsed.settlements[1].netted_pairs).toBe(40);
+    expect(parsed.settlements[1].net_pnl_dollars).toBe(29); // 60 + 40 − 70 − 1
+    expect(parsed.summary.net_pnl_dollars).toBe(34.59);
+    expect(parsed.summary.net_positive).toBe(2);
+  });
+
   it("should filter by ticker", async () => {
     mockPortfolioApi.getSettlements.mockResolvedValue({
       data: { settlements: [], cursor: null },
