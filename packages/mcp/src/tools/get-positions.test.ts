@@ -47,7 +47,6 @@ describe("get_positions tool", () => {
         market_exposure_dollars: "45.0000",
         realized_pnl_dollars: "5.0000",
         fees_paid_dollars: "0.5000",
-        resting_orders_count: 2,
       },
     ];
 
@@ -100,6 +99,7 @@ describe("get_positions tool", () => {
       undefined, // cursor
       50, // limit
       undefined, // count_filter
+      undefined, // settlementStatus
       "KXBTC-25JAN03-B100500", // ticker
       undefined // event_ticker
     );

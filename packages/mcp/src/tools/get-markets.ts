@@ -70,6 +70,7 @@ export function registerGetMarkets(server: McpServer, marketApi: MarketApi) {
           undefined, // minCreatedTs
           undefined, // maxCreatedTs
           undefined, // minUpdatedTs
+          undefined, // maxUpdatedTs
           undefined, // maxCloseTs
           undefined, // minCloseTs
           undefined, // minSettledTs

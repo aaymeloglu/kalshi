@@ -12,15 +12,26 @@ import {
 
 // Mock kalshi-typescript
 vi.mock("kalshi-typescript", () => ({
-  Configuration: vi.fn().mockImplementation((config) => ({
-    apiKey: config.apiKey,
-    privateKeyPem: config.privateKeyPem,
-    basePath: config.basePath,
-  })),
-  MarketApi: vi.fn().mockImplementation(() => ({ name: "MarketApi" })),
-  PortfolioApi: vi.fn().mockImplementation(() => ({ name: "PortfolioApi" })),
-  OrdersApi: vi.fn().mockImplementation(() => ({ name: "OrdersApi" })),
-  EventsApi: vi.fn().mockImplementation(() => ({ name: "EventsApi" })),
+  // Regular functions (not arrows) so the mocks can be called with `new`.
+  Configuration: vi.fn().mockImplementation(function (config) {
+    return {
+      apiKey: config.apiKey,
+      privateKeyPem: config.privateKeyPem,
+      basePath: config.basePath,
+    };
+  }),
+  MarketApi: vi.fn().mockImplementation(function () {
+    return { name: "MarketApi" };
+  }),
+  PortfolioApi: vi.fn().mockImplementation(function () {
+    return { name: "PortfolioApi" };
+  }),
+  OrdersApi: vi.fn().mockImplementation(function () {
+    return { name: "OrdersApi" };
+  }),
+  EventsApi: vi.fn().mockImplementation(function () {
+    return { name: "EventsApi" };
+  }),
 }));
 
 describe("constants", () => {
