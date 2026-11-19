@@ -38,6 +38,7 @@ export function registerGetEvent(server: McpServer, eventsApi: EventsApi) {
       try {
         const response = await eventsApi.getEvent(
           params.event_ticker,
+          undefined, // excludeMarkets
           params.with_nested_markets
         );
 

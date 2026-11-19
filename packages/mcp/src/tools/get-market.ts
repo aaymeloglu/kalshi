@@ -78,7 +78,6 @@ export function registerGetMarket(server: McpServer, marketApi: MarketApi) {
           volume: fp(market.volume_fp),
           volume_24h: fp(market.volume_24h_fp),
           open_interest: fp(market.open_interest_fp),
-          liquidity: fp(market.liquidity_dollars),
 
           // Timing
           created_time: market.created_time,

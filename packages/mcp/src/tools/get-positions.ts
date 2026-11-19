@@ -57,6 +57,7 @@ export function registerGetPositions(
           params.cursor,
           params.limit,
           params.count_filter,
+          undefined, // settlementStatus (API default: unsettled)
           params.ticker,
           params.event_ticker
         );
@@ -77,8 +78,6 @@ export function registerGetPositions(
             realized_pnl_dollars: fp(pos.realized_pnl_dollars),
             // Fees (dollars)
             fees_paid_dollars: fp(pos.fees_paid_dollars),
-            // Resting orders
-            resting_orders_count: pos.resting_orders_count,
           };
         });
 

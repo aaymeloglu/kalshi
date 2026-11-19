@@ -115,6 +115,7 @@ describe("get_markets tool", () => {
       undefined, // minCreatedTs
       undefined, // maxCreatedTs
       undefined, // minUpdatedTs
+      undefined, // maxUpdatedTs
       undefined, // maxCloseTs
       undefined, // minCloseTs
       undefined, // minSettledTs

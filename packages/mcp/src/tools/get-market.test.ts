@@ -61,7 +61,6 @@ describe("get_market tool", () => {
       volume_fp: "10000",
       volume_24h_fp: "500",
       open_interest_fp: "2500",
-      liquidity_dollars: "5000",
       created_time: "2024-12-01T00:00:00Z",
       open_time: "2024-12-01T00:00:00Z",
       close_time: "2025-01-03T00:00:00Z",

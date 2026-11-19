@@ -85,7 +85,7 @@ describe("get_event tool", () => {
       with_nested_markets: true,
     });
 
-    expect(mockEventsApi.getEvent).toHaveBeenCalledWith("KXBTC", true);
+    expect(mockEventsApi.getEvent).toHaveBeenCalledWith("KXBTC", undefined, true);
 
     const parsed = JSON.parse(
       (result as { content: [{ text: string }] }).content[0].text
@@ -115,7 +115,7 @@ describe("get_event tool", () => {
       event_ticker: "ELECTION",
     });
 
-    expect(mockEventsApi.getEvent).toHaveBeenCalledWith("ELECTION", undefined);
+    expect(mockEventsApi.getEvent).toHaveBeenCalledWith("ELECTION", undefined, undefined);
 
     const parsed = JSON.parse(
       (result as { content: [{ text: string }] }).content[0].text
